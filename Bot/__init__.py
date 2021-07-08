@@ -12,7 +12,10 @@ class Bot(discord.Client):
                          "claim" : self.claim_channel,
                          "unclaim" : self.unclaim_channel,
                          "create" : self.create_account,
-                         "login" : self.user_login}
+                         "login" : self.user_login,
+                         "logout" : self.user_logout,
+                         "help" : self.help}
+        self.data = {}
 
     def start_game(self):
         data = settings.Load()
@@ -28,7 +31,6 @@ class Bot(discord.Client):
         print("Ready")
 
     async def on_message(self, message):
-        print(message.content)
         if message.content[0:len(settings.PREFIX)] != settings.PREFIX or message.author == self.user:
             return
 
@@ -82,12 +84,36 @@ class Bot(discord.Client):
             settings.ACCOUNTS[arguments[1]] = account
             settings.USERS[message.author.id] = arguments[1]
             await message.channel.send("Account successfully created! Welcome " + arguments[1])
+            await self.user_login(arguments, message)
         else:
             await message.channel.send(
                 "You already have an account created! Your username is " + settings.USERS[message.author.id])
         self.save()
 
     async def user_login(self, arguments, message):
-        pass
+        logged_in = False
+        if arguments[1] in settings.ACCOUNTS:
+            print(1)
+            account = settings.ACCOUNTS[arguments[1]]
+            if account.password == arguments[2]:
+                print(2)
+                self.data[message.author.id] = {"ACCOUNT" : account}
+                await message.channel.send("Successfully logged in! Welcome back!")
+                logged_in = True
+        if not logged_in:
+            await message.channel.send("Your username or password is incorrect!")
+
+    async def user_logout(self, arguments, message):
+        if message.author.id in self.data:
+            del self.data[message.author.id]
+            await message.channel.send("You have been logged out!")
+        else:
+            await message.channel.send("You aren't logged in to any accounts!")
+
+    async def help(self, arguments, message):
+        embed = discord.Embed()
+        for comnd in settings.command_help:
+            embed.add_field(name=comnd[0], value=comnd[1], inline=False)
+        await message.channel.send(embed=embed)
 
 
