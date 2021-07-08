@@ -1,9 +1,14 @@
 import discord
 import asyncio
 import pickle
+import GameOS
 
 PREFIX = "?"
-SERVERS = {821517617016733736 : {862374893503905802: 862374893932249179, 862374895651389502: 862374896159031306, 862374897975558164: 862374898374541342}}
+SERVERS = {821517617016733736 : {862374893503905802: 862374893932249179,
+                                 862374895651389502: 862374896159031306,
+                                 862374897975558164: 862374898374541342}}
+ACCOUNTS = {}
+USERS = {}
 
 
 async def NormalOverWrite(channel, channel_role):
@@ -32,13 +37,18 @@ def LoadToken():
     return token
 
 
-def SaveServers():
-    pass
+def Save(data):
+    with open("Bot\\files.data", "wb") as file:
+        pickle.dump(data, file)
 
 
-def LoadServers():
-    with open("Bot\\servers.data") as file:
+def Load():
+    with open("Bot\\files.data", "rb") as file:
         servers = pickle.load(file)
 
     return servers
 
+
+if __name__ == "__main__":
+    Save({"SERVERS": SERVERS, "ACCOUNTS": ACCOUNTS, "USERS": USERS})
+    print(Load())
