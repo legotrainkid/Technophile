@@ -10,12 +10,18 @@ SERVERS = {821517617016733736 : {862374893503905802: 862374893932249179,
 ACCOUNTS = {}
 USERS = {}
 
-command_help = [["?claim", "Claims a channel so that only you can see it"],
-                ["?unclaim", "Purges the channel messages and reopens the channel"],
+command_help = [["?claim", "Claims a computer channel so that only you can see it"],
+                ["?unclaim", "Purges the computer channel you are using and reopens it"],
                 ["?create [username] [password]",
                  "Creates and account with the given username and password. You cannot create multiple accounts"],
                 ["?login [username] [password]", "Logins to the given account (if the credentials are correct)."],
-                ["?logout", "Logs out of the account you are currently logged into."]]
+                ["?logout", "Logs out of the account you are currently logged into."],
+                ["?mydrive",
+                 "View the drive of the account you are currently logged into. Only works if you are logged in"],
+                ["?chdir [path]",
+                 "Change the directory you are in, only works if you have a drive  open"]]
+
+EMOJIS = {"folder" : "📁", "file" : "📄"}
 
 
 async def NormalOverWrite(channel, channel_role):

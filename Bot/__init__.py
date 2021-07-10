@@ -14,7 +14,9 @@ class Bot(discord.Client):
                          "create" : self.create_account,
                          "login" : self.user_login,
                          "logout" : self.user_logout,
-                         "help" : self.help}
+                         "help" : self.help,
+                         "mydrive" : self.my_drive,
+                         "chdir" : self.change_dir}
         self.data = {}
 
     def start_game(self):
@@ -27,12 +29,31 @@ class Bot(discord.Client):
     def save(self):
         settings.Save({"SERVERS": settings.SERVERS, "ACCOUNTS": settings.ACCOUNTS, "USERS": settings.USERS})
 
+    def view_drive(self, computer, path):
+        new = path.split("\\")
+        if new[-1] == "":
+            new = new[:-1]
+        files = computer.FILESYSTEM.return_files(new)
+        embed = discord.Embed(title=computer.account.username + "'s Computer")
+        field_value = ""
+        for folder in files["Folders"]:
+            field_value += settings.EMOJIS["folder"] + " " + folder + "\n"
+        for file in files["Files"]:
+            field_value += settings.EMOJIS["file"] + " " + file + "\n"
+
+        if not field_value:
+            field_value = "This folder is empty!"
+
+        embed.add_field(name=path, value=field_value)
+        return embed
+
     async def on_ready(self):
         print("Ready")
 
     async def on_message(self, message):
         if message.content[0:len(settings.PREFIX)] != settings.PREFIX or message.author == self.user:
             return
+        print(message.content)
 
         arguments = message.content[len(settings.PREFIX):].split(" ")
 
@@ -93,11 +114,10 @@ class Bot(discord.Client):
     async def user_login(self, arguments, message):
         logged_in = False
         if arguments[1] in settings.ACCOUNTS:
-            print(1)
             account = settings.ACCOUNTS[arguments[1]]
             if account.password == arguments[2]:
-                print(2)
-                self.data[message.author.id] = {"ACCOUNT" : account}
+                computer = GameOS.CreateComputer(account)
+                self.data[message.author.id] = {"ACCOUNT" : account, "COMPUTER" : computer}
                 await message.channel.send("Successfully logged in! Welcome back!")
                 logged_in = True
         if not logged_in:
@@ -116,4 +136,39 @@ class Bot(discord.Client):
             embed.add_field(name=comnd[0], value=comnd[1], inline=False)
         await message.channel.send(embed=embed)
 
+    async def my_drive(self, arguments, message):
+        if message.author.id in self.data:
+            embed = self.view_drive(self.data[message.author.id]["COMPUTER"], "C:\\")
+            mess = await message.channel.send(embed=embed)
+            self.data[message.author.id]["DRIVE_MESS"] = mess
+            self.data[message.author.id]["c_path"] = "C:\\"
+        else:
+            await message.channel.send("You are not logged in! Please login to an account first!")
 
+    async def change_dir(self, arguments, message):
+        member_id = message.author.id
+        if len(arguments) != 2:
+            warning = await message.channel.send("Please specify a path! Proper command: `?chdir [path]`")
+            await warning.delete(delay=5)
+        elif member_id in self.data:
+            if "DRIVE_MESS" in self.data[member_id]:
+                if arguments[1] == "up":
+                    path = self.data[member_id]["DRIVE_MESS"].embeds[0].fields[0].name.split("\\")
+                    if path[-1] == "":
+                        path = path[:-1]
+                    path = "\\".join(path[:-1])
+                elif self.data[member_id]["c_path"] not in arguments[1] and arguments[1][0] != "C":
+                    path = self.data[member_id]["c_path"]+arguments[1]
+                else:
+                    path = arguments[1]
+                if self.data[member_id]["COMPUTER"].FILESYSTEM.is_valid_path(path):
+                    if path[-1] != "\\":
+                        path += "\\"
+                    self.data[member_id]["c_path"] = path
+                    self.data[member_id]["COMPUTER"].FILESYSTEM.create_log("chdir " + path)
+                    embed = self.view_drive(self.data[member_id]["COMPUTER"], path)
+                    await self.data[member_id]["DRIVE_MESS"].edit(embed=embed)
+        await message.delete()
+
+    async def clear_dir(self, arguments, message):
+        pass
