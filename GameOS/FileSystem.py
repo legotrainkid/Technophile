@@ -9,9 +9,11 @@ DEFAULT_FILES = {"C:" : {"Documents" : {}, "Downloads" : {}, "Software" : {},
 
 
 def SaveFiles():
+    global ALL_FILES, NEXT_ID
     data = {"Files" : ALL_FILES, "ID" : NEXT_ID}
     with open("GameOS\\FileSystemData.data", "wb") as file:
         pickle.dump(data, file)
+    print(data)
 
 
 def LoadFiles():
@@ -20,7 +22,7 @@ def LoadFiles():
         data = pickle.load(file)
     ALL_FILES = data["Files"]
     NEXT_ID = data["ID"]
-    print(ALL_FILES)
+    print(data)
 
 
 def GenerateFileID():
@@ -74,8 +76,6 @@ class File:
         self.data = data
         self.id = id
 
-
-LoadFiles()
 
 if __name__ == "__main__":
     SaveFiles()

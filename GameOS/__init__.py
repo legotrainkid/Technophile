@@ -5,7 +5,9 @@ def CreateComputer(account):
     if "file_id" in account.data:
         files = LoadFiles(account.data["file_id"])
     else:
-        files = FileSystem.FileSystem(FileSystem.GenerateFileID())
+        id = FileSystem.GenerateFileID()
+        files = FileSystem.FileSystem(id)
+        account.data["file_id"] = id
     return Computer(account, files)
 
 
@@ -25,3 +27,7 @@ class Computer:
     def __init__(self, account, files):
         self.account = account
         self.FILESYSTEM = files
+
+    def SaveFiles(self):
+        FileSystem.ALL_FILES[self.account.data["file_id"]] = self.FILESYSTEM
+        FileSystem.SaveFiles()

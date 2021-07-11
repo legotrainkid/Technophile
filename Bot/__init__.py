@@ -24,10 +24,11 @@ class Bot(discord.Client):
         settings.SERVERS = data["SERVERS"]
         settings.ACCOUNTS = data["ACCOUNTS"]
         settings.USERS = data["USERS"]
+        GameOS.FileSystem.LoadFiles()
         self.run(settings.LoadToken())
 
     def save(self):
-        settings.Save({"SERVERS": settings.SERVERS, "ACCOUNTS": settings.ACCOUNTS, "USERS": settings.USERS})
+        settings.Save()
 
     def view_drive(self, computer, path):
         new = path.split("\\")
@@ -46,6 +47,21 @@ class Bot(discord.Client):
 
         embed.add_field(name=path, value=field_value)
         return embed
+
+    def get_path(self, path, member_id):
+        if path == "up":
+            newpath = self.get_current_path(member_id).split("\\")
+            if path[-1] == "":
+                newpath = newpath[:-1]
+            newpath = "\\".join(path[:-1])
+        elif self.data[member_id]["c_path"] not in path and path[0:3] != "C:\\":
+            newpath = self.data[member_id]["c_path"] + path[1]
+        else:
+            newpath = path[1]
+        return newpath
+
+    def get_current_path(self, member_id):
+        return self.data[member_id]["DRIVE_MESS"].embeds[0].fields[0].name
 
     async def on_ready(self):
         print("Ready")
@@ -122,6 +138,7 @@ class Bot(discord.Client):
                 logged_in = True
         if not logged_in:
             await message.channel.send("Your username or password is incorrect!")
+        self.save()
 
     async def user_logout(self, arguments, message):
         if message.author.id in self.data:
@@ -152,15 +169,7 @@ class Bot(discord.Client):
             await warning.delete(delay=5)
         elif member_id in self.data:
             if "DRIVE_MESS" in self.data[member_id]:
-                if arguments[1] == "up":
-                    path = self.data[member_id]["DRIVE_MESS"].embeds[0].fields[0].name.split("\\")
-                    if path[-1] == "":
-                        path = path[:-1]
-                    path = "\\".join(path[:-1])
-                elif self.data[member_id]["c_path"] not in arguments[1] and arguments[1][0] != "C":
-                    path = self.data[member_id]["c_path"]+arguments[1]
-                else:
-                    path = arguments[1]
+                path = self.get_path(arguments[1], member_id)
                 if self.data[member_id]["COMPUTER"].FILESYSTEM.is_valid_path(path):
                     if path[-1] != "\\":
                         path += "\\"
@@ -168,6 +177,8 @@ class Bot(discord.Client):
                     self.data[member_id]["COMPUTER"].FILESYSTEM.create_log("chdir " + path)
                     embed = self.view_drive(self.data[member_id]["COMPUTER"], path)
                     await self.data[member_id]["DRIVE_MESS"].edit(embed=embed)
+        self.data[member_id]["COMPUTER"].SaveFiles()
+        self.save()
         await message.delete()
 
     async def clear_dir(self, arguments, message):

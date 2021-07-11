@@ -1,5 +1,19 @@
 import Bot
+import GameOS
 
-if __name__ == "__main__":
+
+def ResetFiles():
+    GameOS.FileSystem.SaveFiles()
+    print(GameOS.FileSystem.LoadFiles())
+    Bot.settings.Save()
+    print(Bot.settings.Load())
+
+
+def Run():
     game = Bot.Bot()
     game.start_game()
+
+
+if __name__ == "__main__":
+    Run()
+    # ResetFiles()

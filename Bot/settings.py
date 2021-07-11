@@ -50,7 +50,8 @@ def LoadToken():
     return token
 
 
-def Save(data):
+def Save():
+    data = {"SERVERS": SERVERS, "ACCOUNTS": ACCOUNTS, "USERS": USERS}
     with open("Bot\\files.data", "wb") as file:
         pickle.dump(data, file)
 
